@@ -1,48 +1,33 @@
-# Trading System Project
+# Hermes
 
-# Architecture
+Hermes is my project to create a complete end-to-end high level representation of a trading system.
 
-## Components
+The project is named Hermes as Hermes is the fastest greek god, which is in line with the aim of the project which is to create a fast, performant and extensible trading system comprising of multiple components.
 
-### Gateway
+# Requirements
+
+- C++20
+- CMake
+
+# Documentation
+
+- Found in the `docs/` directory, documents design decisions, requirements, design patterns etc
+
+# Components
+
+## Gateway
 
 - Communicates to external network of exchanges
-- Subscribes to exchange feeds
-- Handles outflow of orders onto exchanges
 
-#### Network Protocols
-
-##### FIX (Financial Information eXchange)
-
-- Set of key-value pairs which numbers indicating certain tags
-
-Example:
-
-`8=FIX.4.42|9=76|35=A|34=1|49=TRADER1|52=20220117-12:11:44.224|56=VENUE1|98=0|108=30|141=Y|10=134`
-
-##### FAST (FIX Adapted for STreaming)
-
-- High-speed version of FIX protocol, operates on top of UDP
-- Makes use of compression techniques
-
-##### ITCH/OUCH protocol
-
-- OUCH operates over TCP
-- ITCH operates over multicast or TCP
-
-##### CME Market Data Protocol
-
-- CME (Chicago Merchantile Exchange) developed its own proprietary binary protocols famous for low-latency venues
-
-### Orderbook
+## Orderbook
 
 - Presents internal representation of orders from feed
 
-### Strategy
+## Strategy
 
 - Contains signal and execution components
 
-### Order Manager
+## Order Manager
 
 - Decides if orders are sent / not sent based on risk parameters
 
