@@ -19,8 +19,8 @@ namespace hermes {
   };
 
   // Examplar:
-  //     A DerivedOrchestrator contains all the required components to run by 
-  //     itself as a separate service
+  //     A DerivedOrchestrator links all running services together into one 
+  //     trading system where they communicate through a pub-sub pattern
   // class DerivedOrchestrator : public Orchestrator<DerivedOrchestrator> {
   // public:
   //   void start() {
