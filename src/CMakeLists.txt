@@ -1,0 +1,7 @@
+add_subdirectory(gateway)
+add_subdirectory(order-manager)
+add_subdirectory(orderbook)
+add_subdirectory(shared)
+add_subdirectory(strategy)
+add_subdirectory(orchestrator)
+add_subdirectory(routing)
