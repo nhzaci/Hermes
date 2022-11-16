@@ -4,9 +4,12 @@ Hermes is my project to create a complete end-to-end high level representation o
 
 The project is named Hermes as Hermes is the fastest greek god, which is in line with the aim of the project which is to create a fast, performant and extensible trading system comprising of multiple components.
 
+Hermes makes use of C++20 concepts for compile-time polymorphism.
+
 # Requirements
 
 - C++20
+- Clang++ 13.0
 - CMake
 
 # Documentation
