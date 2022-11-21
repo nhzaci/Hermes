@@ -1,5 +1,9 @@
 # References
 
+## FIX
+
+- https://www.fixtrading.org/implementation-guide/
+
 ## Type Traits 
 
 - https://www.internalpointers.com/post/quick-primer-type-traits-modern-cpp

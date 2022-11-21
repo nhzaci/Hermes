@@ -45,34 +45,9 @@ public:
 
   size_t size() { return bids_.size() + asks_.size(); }
 
-  void insert(Order &&order) {
-    if (order.isBuy())
-      bids_.insert(std::move(order));
-    else
-      asks_.insert(std::move(order));
-  }
-
-  void insert(const Order &order) {
-    if (order.isBuy())
-      bids_.insert(order);
-    else
-      asks_.insert(order);
-  }
-
-  void modify(Order &&order) {
-    if (order.isBuy())
-      bids_.modify(std::move(order));
-    else
-      asks_.modify(std::move(order));
-  }
-
-  void remove(order_id_t id, bool isBuyOrder) {
-    if (isBuyOrder)
-      bids_.remove(id);
-    else
-      asks_.remove(id);
-  }
-
+  /**
+   * @brief Templated function for crossing buy / sell order
+   */
   template <bool isBuy> void cross(Order &);
 
   template <> void cross<true>(Order &buyOrder) {
@@ -88,6 +63,66 @@ public:
       return;
     bids_.cross(sellOrder);
   }
+
+  /**
+   * @brief Insert order into bid or ask container
+   *  TODO: Optimize, branching before inserting doesn't look the most elegant
+   */
+  void insert(Order &&order) {
+    if (order.isBuy()) {
+      cross<true>(order);
+      if (order.quantity() > 0)
+        bids_.insert(std::move(order));
+    } else {
+      cross<false>(order);
+      if (order.quantity() > 0)
+        asks_.insert(std::move(order));
+    }
+  }
+
+  /**
+   * @brief Insert order into bid or ask container
+   *  TODO: Optimize, branching before inserting doesn't look the most elegant
+   */
+  void insert(Order &order) {
+    if (order.isBuy()) {
+      cross<true>(order);
+      if (order.quantity() > 0)
+        bids_.insert(order);
+    } else {
+      cross<false>(order);
+      if (order.quantity() > 0)
+        asks_.insert(order);
+    }
+  }
+
+  /**
+   * @brief Insert order into bid or ask container
+   */
+  void modify(Order &&order) {
+    if (order.isBuy())
+      bids_.modify(std::move(order));
+    else
+      asks_.modify(std::move(order));
+  }
+
+  /**
+   * @brief Remove order from bid or ask container
+   */
+  void remove(order_id_t id, bool isBuyOrder) {
+    if (isBuyOrder)
+      bids_.remove(id);
+    else
+      asks_.remove(id);
+  }
+
+  /**
+   * @brief Bid ask spread is the price discrepancy between bid and ask
+   */
+  order_price_t bidAskSpread() { return asks_.bestPrice() - bids_.bestPrice(); }
+
+  const bids_t &bids() const { return bids_; }
+  const asks_t &asks() const { return asks_; }
 
 private:
   bids_t bids_;

@@ -53,7 +53,7 @@ public:
   using order_exch_id_t = typename Order::exch_id_t;
   using order_type_t = typename Order::type_t;
 
-  using price_t = typename Order::price_t;
+  using price_t = order_price_t;
   using list_itr_t = typename std::list<Order>::iterator;
   using itr_t = list_itr_t;
   using cmp_t = Compare;
@@ -70,7 +70,7 @@ public:
   /**
    * @brief Checks if id exists in hash table
    */
-  bool contains(order_id_t id) { return orderMap_.contains(id); }
+  bool contains(order_id_t id) const { return orderMap_.contains(id); }
 
   /**
    * @brief Finds a node, deferencing might lead to a
@@ -113,6 +113,11 @@ public:
     size_++;
   }
 
+  /**
+   * @brief Removes order if quantity reaches 0, otherwise modifies the
+   * order which can result in change in price. If there's a change in price,
+   * it takes O(log(n)), otherwise, O(1) for modifying quantity or price
+   */
   void modify(const Order &newOrder) {
     if (newOrder.quantity() == 0) {
       remove(newOrder.id());
@@ -133,6 +138,11 @@ public:
     insert(newOrder);
   }
 
+  /**
+   * @brief Removes order if quantity reaches 0, otherwise modifies the
+   * order which can result in change in price. If there's a change in price,
+   * it takes O(log(n)), otherwise, O(1) for modifying quantity or price
+   */
   void modify(Order &&newOrder) {
     if (newOrder.quantity() == 0) {
       remove(newOrder.id());
@@ -216,6 +226,10 @@ public:
     }
   }
 
+  /**
+   * @brief Get "best" price, which is the top of the price level map. Depends
+   * on Compare function object passed in
+   */
   price_t bestPrice() const { return priceLevels_.begin()->first; }
 
   friend std::ostream &operator<<(std::ostream &os,
@@ -223,9 +237,12 @@ public:
     for (auto [key, list] : container.priceLevels_) {
       os << "\n===\nprice level: " << key << "\n";
 
+      price_t quantity = 0;
       for (auto item : list) {
-        os << item << "\n";
+        os << item << " || ";
+        quantity += item.quantity();
       }
+      os << "\ntotal quantity: " << quantity << "\n";
 
       os << "===\n";
     }

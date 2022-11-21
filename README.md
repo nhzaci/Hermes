@@ -33,7 +33,3 @@ Hermes makes use of C++20 concepts for compile-time polymorphism.
 ## Order Manager
 
 - Decides if orders are sent / not sent based on risk parameters
-
-# References
-
-- Developing HFT Systems by Sebastien Donadio, Sourav Ghosh, Romain Rossier
