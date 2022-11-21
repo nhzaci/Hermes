@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../common/Pattern.hxx"
 #include "Container.hxx"
 #include "Order.hxx"
 
 #include <functional>
 #include <iostream>
+#include <memory>
 #include <tuple>
 #include <vector>
 
@@ -36,30 +36,62 @@ public:
   using asks_t = AsksContainer;
   using bids_t = BidsContainer;
   using order_id_t = typename Order::id_t;
+  using order_price_t = typename Order::price_t;
+  using order_quantity_t = typename Order::quantity_t;
+  using order_exch_id_t = typename Order::exch_id_t;
+  using order_type_t = typename Order::type_t;
 
   Orderbook() : bids_{}, asks_{} {};
 
-  size_t size() { return size_; }
+  size_t size() { return bids_.size() + asks_.size(); }
 
-  void insert(Order &&order) {}
-  void insert(const Order &order) {}
+  void insert(Order &&order) {
+    if (order.isBuy())
+      bids_.insert(std::move(order));
+    else
+      asks_.insert(std::move(order));
+  }
 
-  void modify(Order &&order) {}
+  void insert(const Order &order) {
+    if (order.isBuy())
+      bids_.insert(order);
+    else
+      asks_.insert(order);
+  }
 
-  void remove(order_id_t id) {}
+  void modify(Order &&order) {
+    if (order.isBuy())
+      bids_.modify(std::move(order));
+    else
+      asks_.modify(std::move(order));
+  }
 
-  void trade(const Order &order) {}
-  void trade(Order &&order) {}
+  void remove(order_id_t id, bool isBuyOrder) {
+    if (isBuyOrder)
+      bids_.remove(id);
+    else
+      asks_.remove(id);
+  }
+
+  template <bool isBuy> void cross(Order &);
+
+  template <> void cross<true>(Order &buyOrder) {
+    auto bestSellPrice = asks_.bestPrice();
+    if (buyOrder.price() < bestSellPrice)
+      return;
+    asks_.cross(buyOrder);
+  }
+
+  template <> void cross<false>(Order &sellOrder) {
+    auto bestBuyPrice = bids_.bestPrice();
+    if (bestBuyPrice < sellOrder.price())
+      return;
+    bids_.cross(sellOrder);
+  }
 
 private:
   bids_t bids_;
   asks_t asks_;
-  size_t size_;
-
-  /**
-   * @brief Bid ask spread crossing
-   */
-  void cross() {}
 };
 
 }; // namespace hermes

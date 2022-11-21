@@ -6,19 +6,11 @@ FetchContent_Declare(
   GIT_TAG release-1.12.1
 )
  
-FetchContent_MakeAvailable(googletest)
 
-# set(THREADS_PREFER_PTHREAD_FLAG ON)
-# find_package(Threads REQUIRED)
+set(BENCHMARK_ENABLE_TESTING OFF)
+FetchContent_Declare(googlebenchmark
+  GIT_REPOSITORY https://github.com/google/benchmark.git
+  GIT_TAG v1.7.0
+)
 
-# find_package(PkgConfig REQUIRED)
-# 
-# FetchContent_Declare(
-#   Libevent
-#   GIT_REPOSITORY https://github.com/libevent/libevent.git
-#   GIT_TAG release-2.1.12-stable
-# )
- 
-# FetchContent_MakeAvailable(Libevent)
-
-# find_package(Libevent REQUIRED COMPONENTS core pthreads)
+FetchContent_MakeAvailable(googletest googlebenchmark)

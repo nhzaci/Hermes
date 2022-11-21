@@ -14,14 +14,17 @@ concept OrderLike = requires(OrderImpl impl) {
   typename OrderImpl::quantity_t;
   typename OrderImpl::id_t;
   typename OrderImpl::exch_id_t;
-  typename OrderImpl::order_t;
+  typename OrderImpl::type_t;
 
   { impl.isBuy() } -> std::convertible_to<bool>;
   { impl.price() } -> std::convertible_to<typename OrderImpl::price_t>;
   { impl.exchangeId() } -> std::convertible_to<typename OrderImpl::exch_id_t>;
   { impl.id() } -> std::convertible_to<typename OrderImpl::id_t>;
   { impl.quantity() } -> std::convertible_to<typename OrderImpl::quantity_t>;
-  { impl.orderType() } -> std::convertible_to<typename OrderImpl::order_t>;
+  {
+    impl.setQuantity(typename OrderImpl::quantity_t{})
+    } -> std::convertible_to<void>;
+  { impl.orderType() } -> std::convertible_to<typename OrderImpl::type_t>;
 };
 
 class Order {
@@ -30,7 +33,11 @@ public:
   using quantity_t = uint64_t;
   using id_t = uint64_t;
   using exch_id_t = uint64_t;
-  using order_t = OrderType;
+  using type_t = OrderType;
+
+  Order()
+      : id_{}, price_{}, quantity_{}, isBuy_{false}, exchangeId_{},
+        orderType_{} {};
 
   Order(id_t id, price_t price, quantity_t quantity, bool isBuy,
         exch_id_t exchangeId)
@@ -47,7 +54,9 @@ public:
   quantity_t quantity() const { return quantity_; };
   id_t id() const { return id_; };
   exch_id_t exchangeId() const { return exchangeId_; };
-  order_t orderType() const { return orderType_; }
+  type_t orderType() const { return orderType_; }
+
+  void setQuantity(quantity_t newQuantity) { quantity_ = newQuantity; };
 
   friend std::ostream &operator<<(std::ostream &os, const Order &order) {
     return os << "Order(id=" << order.id_ << ";price=" << order.price_
@@ -63,7 +72,7 @@ private:
   quantity_t quantity_;
   bool isBuy_;
   exch_id_t exchangeId_;
-  order_t orderType_;
+  type_t orderType_;
 };
 
 }; // namespace hermes

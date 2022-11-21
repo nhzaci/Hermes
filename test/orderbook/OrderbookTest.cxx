@@ -4,6 +4,12 @@
 #include "OrderTest.hxx"
 #include "OrderbookTest.hxx"
 
+#include "../../src/orderbook/Container.hxx"
+#include "../../src/orderbook/Order.hxx"
+#include "../../src/orderbook/Orderbook.hxx"
+
+class OrderbookTestF : public ::testing::Test {};
+
 TEST(OrderbookConcept, TestOrderbookWorks) {
   TestOrder order;
   TestOrderbook<TestOrder, TestContainer<TestOrder>> book;

@@ -4,6 +4,8 @@
 
 # Design Patterns
 
+## C++20 Concepts (TODO)
+
 ## Curiously Recurring Template Pattern (CRTP)
 
 - As with any low latency project, making everything evaluated at compile time is very important. As such, templates in C++ provide a very powerful tool in allowing functions to be evaluated at compile time.
@@ -36,15 +38,39 @@ class Derived : public Base<Derived>
 
 - Making use of publisher subscriber pattern to communicate between services, delivering push-based updates to downstream components
 
+## Strategy
+
+- Define a family of algorithms, putting each of them into a separate class and make their objects interchangeable
+- Used in Gateway where they could have different Protocols for different gateways
+
 # High Level Design
 
 ## End-to-end Flow
 
 Gateway (Ingress) -> Orderbook -> Strategy -> OrderManager -> Routing -> Gateway (Egress)
 
-# Gateway
+## Gateway
 
-## Requirements
+### Requirements
 
 - Allow switching of underlying protocols as protocols get updated over time
 - Allows sending of orders through gateway
+
+## Order Book
+
+### Operations
+
+- Insertion
+  - Adds a new order into the book
+  - Time: O(1) or O(log n)
+- Modification
+  - Use order ID to seek order in the book
+  - Should have similar time complexity to insertion
+- Cancelation
+  - Allows an order to be withdrawn from the book
+
+### Requirements
+
+- Constant look-up, fast quantity update
+- Iteration in order of prices
+- Retrieving best bid and ask in constant time

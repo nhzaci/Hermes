@@ -1,4 +1,4 @@
-set(LIB_NAME "Shared")
+set(LIB_NAME "Common")
 
 file(GLOB LIB_SOURCES *.cxx)
 file(GLOB LIB_HEADERS *.hxx)
