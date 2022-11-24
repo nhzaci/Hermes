@@ -5,34 +5,25 @@
 #include <iostream>
 
 #include "OrderType.hxx"
+#include "Types.hxx"
 
 namespace hermes {
 
 template <typename OrderImpl>
 concept OrderLike = requires(OrderImpl impl) {
-  typename OrderImpl::price_t;
-  typename OrderImpl::quantity_t;
-  typename OrderImpl::id_t;
-  typename OrderImpl::exch_id_t;
   typename OrderImpl::type_t;
 
   { impl.isBuy() } -> std::convertible_to<bool>;
-  { impl.price() } -> std::convertible_to<typename OrderImpl::price_t>;
-  { impl.exchangeId() } -> std::convertible_to<typename OrderImpl::exch_id_t>;
-  { impl.id() } -> std::convertible_to<typename OrderImpl::id_t>;
-  { impl.quantity() } -> std::convertible_to<typename OrderImpl::quantity_t>;
-  {
-    impl.setQuantity(typename OrderImpl::quantity_t{})
-    } -> std::convertible_to<void>;
+  { impl.price() } -> std::convertible_to<price_t>;
+  { impl.exchangeId() } -> std::convertible_to<exch_id_t>;
+  { impl.id() } -> std::convertible_to<id_t>;
+  { impl.quantity() } -> std::convertible_to<quantity_t>;
+  { impl.setQuantity(quantity_t{}) } -> std::convertible_to<void>;
   { impl.orderType() } -> std::convertible_to<typename OrderImpl::type_t>;
 };
 
 class Order {
 public:
-  using price_t = uint64_t;
-  using quantity_t = uint64_t;
-  using id_t = uint64_t;
-  using exch_id_t = uint64_t;
   using type_t = OrderType;
 
   Order()

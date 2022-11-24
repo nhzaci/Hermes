@@ -7,16 +7,17 @@
 #include "../../src/orderbook/Container.hxx"
 #include "../../src/orderbook/Order.hxx"
 #include "../../src/orderbook/Orderbook.hxx"
+#include "../../src/orderbook/Types.hxx"
 
 class OrderbookTestF : public ::testing::Test {
 public:
   OrderbookTestF() : book{} {};
 
-  hermes::Orderbook<hermes::Order, hermes::RBTreeContainer<hermes::Order>,
-                    hermes::RBTreeContainer<
-                        hermes::Order, std::greater<hermes::Order::price_t>>>
+  hermes::Orderbook<
+      hermes::Order, hermes::RBTreeContainer<hermes::Order>,
+      hermes::RBTreeContainer<hermes::Order, std::greater<hermes::price_t>>>
       book;
-  hermes::Order::exch_id_t exchangeId = 10;
+  hermes::exch_id_t exchangeId = 10;
 
   /**
    * Book display:
