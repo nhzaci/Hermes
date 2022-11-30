@@ -4,6 +4,7 @@
 
 #include "ContainerTest.hxx"
 #include "OrderTest.hxx"
+#include "TradeTest.hxx"
 
 #include "../../src/orderbook/Container.hxx"
 #include "../../src/orderbook/Order.hxx"
@@ -13,7 +14,7 @@ class RBTreeContainerTestF : public ::testing::Test {
 public:
   RBTreeContainerTestF() : container_{} {}
 
-  hermes::RBTreeContainer<hermes::Order> container_;
+  hermes::RBTreeContainer<hermes::Order, hermes::Trade> container_;
 
   void SetUp() override {
     using namespace hermes;
@@ -29,7 +30,7 @@ public:
 TEST(ContainerConcept, TestContainerWorks) {
   using namespace hermes;
   TestOrder order;
-  TestContainer<TestOrder> orderContainer;
+  TestContainer<TestOrder, TestTrade> orderContainer;
   orderContainer.insert(order);
   orderContainer.modify(order);
   orderContainer.cross(order);

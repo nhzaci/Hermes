@@ -4,7 +4,9 @@
 #include "../../src/orderbook/Order.hxx"
 #include "../../src/orderbook/Orderbook.hxx"
 
-template <hermes::OrderLike Order, hermes::ContainerLike<Order> Container>
+template <hermes::OrderLike Order, hermes::TradeLike Trade,
+          hermes::ContainerLike<Order, Trade> Container,
+          hermes::TradeListenerLike<Trade> TradeListener>
 class TestOrderbook {
 public:
   using bids_t = Container;

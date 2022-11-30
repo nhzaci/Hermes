@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Order.hxx"
+#include "Trade.hxx"
 #include "Types.hxx"
 
 #include <algorithm>
@@ -14,9 +15,10 @@
 
 namespace hermes {
 
-template <typename ContainerImpl, typename Order,
+template <typename ContainerImpl, typename Order, typename Trade,
           typename Compare = std::less<price_t>>
-concept ContainerLike = OrderLike<Order> && requires(ContainerImpl impl) {
+concept ContainerLike = OrderLike<Order> && TradeLike<Trade> &&
+    requires(ContainerImpl impl) {
   typename ContainerImpl::itr_t;
   typename ContainerImpl::cmp_t;
 
@@ -42,7 +44,8 @@ concept ContainerLike = OrderLike<Order> && requires(ContainerImpl impl) {
  * @tparam Order    Order must adhere to OrderLike concept
  * @tparam Compare  Contains algorithm for sorting of orders within container
  */
-template <OrderLike Order, typename Compare = std::less<price_t>>
+template <OrderLike Order, TradeLike Trade,
+          typename Compare = std::less<price_t>>
 class RBTreeContainer {
 public:
   using list_itr_t = typename std::list<Order>::iterator;
@@ -178,7 +181,9 @@ public:
   // TODO: Abstract crossing out to a strategy, there are many strategies
   // for crossing an order. Currently it's FIFO, try passing a strategy
   // where I'm able to cross with multiple different possibilities
-  void cross(Order &oppSideOrder) {
+  std::vector<Trade> cross(Order &oppSideOrder) {
+    std::vector<Trade> trades;
+
     // while opp of comparator or equal, pop orders from list,
     // advancing price level itr while necessary
     auto priceLevelItr = priceLevels_.begin();
@@ -187,7 +192,7 @@ public:
             cmp_fn_(priceLevelItr->first, oppSideOrder.price())) and
            oppSideOrder.quantity() > 0) {
       // iterate through price level list
-      auto levelList = priceLevelItr->second;
+      auto [currPrice, levelList] = *priceLevelItr;
       auto levelListItr = levelList.begin();
 
       // iterate through levels until we reach 0 quantity left
@@ -197,6 +202,10 @@ public:
         // check quantity fulfilled
         auto quantityFulfilled =
             std::min(oppSideOrder.quantity(), currOrder.quantity());
+
+        // add trades
+        trades.emplace_back(oppSideOrder.id(), currOrder.id(),
+                            quantityFulfilled, currPrice);
 
         // set quantity of the order
         oppSideOrder.setQuantity(oppSideOrder.quantity() - quantityFulfilled);
@@ -215,6 +224,8 @@ public:
       // get next best price
       priceLevelItr = priceLevels_.begin();
     }
+
+    return trades;
   }
 
   /**
