@@ -7,6 +7,7 @@
 #include "../../src/orderbook/Container.hxx"
 #include "../../src/orderbook/Order.hxx"
 #include "../../src/orderbook/Orderbook.hxx"
+#include "../../src/orderbook/Types.hxx"
 
 template <typename Book>
 class OrderbookBenchmarkFixture : public benchmark::Fixture {
@@ -59,10 +60,11 @@ public:
 
 BENCHMARK_TEMPLATE_DEFINE_F(
     OrderbookBenchmarkFixture, OrderbookRBTreeContainerConstRefTest,
-    hermes::Orderbook<
-        hermes::Order, hermes::RBTreeContainer<hermes::Order>,
-        hermes::RBTreeContainer<hermes::Order,
-                                std::greater<typename hermes::Order::price_t>>>)
+    hermes::Orderbook<hermes::Order, hermes::Trade,
+                      hermes::RBTreeContainer<hermes::Order, hermes::Trade>,
+                      hermes::RBTreeContainer<hermes::Order, hermes::Trade,
+                                              std::greater<hermes::price_t>>,
+                      hermes::TradeStore<hermes::Trade>>)
 INSERT_ITEM_INTO_BOOK_CONST_REF;
 
 BENCHMARK_REGISTER_F(OrderbookBenchmarkFixture,
@@ -70,10 +72,11 @@ BENCHMARK_REGISTER_F(OrderbookBenchmarkFixture,
 
 BENCHMARK_TEMPLATE_DEFINE_F(
     OrderbookBenchmarkFixture, OrderbookRBTreeContainerRvalRefTest,
-    hermes::Orderbook<
-        hermes::Order, hermes::RBTreeContainer<hermes::Order>,
-        hermes::RBTreeContainer<hermes::Order,
-                                std::greater<typename hermes::Order::price_t>>>)
+    hermes::Orderbook<hermes::Order, hermes::Trade,
+                      hermes::RBTreeContainer<hermes::Order, hermes::Trade>,
+                      hermes::RBTreeContainer<hermes::Order, hermes::Trade,
+                                              std::greater<hermes::price_t>>,
+                      hermes::TradeStore<hermes::Trade>>)
 INSERT_ITEM_INTO_BOOK_CONST_REF;
 
 BENCHMARK_REGISTER_F(OrderbookBenchmarkFixture,

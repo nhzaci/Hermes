@@ -1,22 +1,29 @@
 #include <gtest/gtest.h>
 
+#include <iostream>
+
 #include "ContainerTest.hxx"
 #include "OrderTest.hxx"
 #include "OrderbookTest.hxx"
+#include "TradeListenerTest.hxx"
+#include "TradeTest.hxx"
 
 #include "../../src/orderbook/Container.hxx"
 #include "../../src/orderbook/Order.hxx"
 #include "../../src/orderbook/Orderbook.hxx"
+#include "../../src/orderbook/Types.hxx"
 
 class OrderbookTestF : public ::testing::Test {
 public:
   OrderbookTestF() : book{} {};
 
-  hermes::Orderbook<hermes::Order, hermes::RBTreeContainer<hermes::Order>,
-                    hermes::RBTreeContainer<
-                        hermes::Order, std::greater<hermes::Order::price_t>>>
+  hermes::Orderbook<hermes::Order, hermes::Trade,
+                    hermes::RBTreeContainer<hermes::Order, hermes::Trade>,
+                    hermes::RBTreeContainer<hermes::Order, hermes::Trade,
+                                            std::greater<hermes::price_t>>,
+                    hermes::TradeStore<hermes::Trade>>
       book;
-  hermes::Order::exch_id_t exchangeId = 10;
+  hermes::exch_id_t exchangeId = 10;
 
   /**
    * Book display:
@@ -46,7 +53,9 @@ public:
 
 TEST(OrderbookConcept, TestOrderbookWorks) {
   TestOrder order;
-  TestOrderbook<TestOrder, TestContainer<TestOrder>> book;
+  TestOrderbook<TestOrder, TestTrade, TestContainer<TestOrder, TestTrade>,
+                TestTradeListener<TestTrade>>
+      book;
   book.insert(order);
   book.modify(order);
   book.remove(order.id());
@@ -61,7 +70,37 @@ TEST_F(OrderbookTestF, CanInsert) {
 }
 
 TEST_F(OrderbookTestF, CrossesOrder) {
-  book.insert(hermes::Order(6, 1008, 10, false, exchangeId));
-  EXPECT_FALSE(book.asks().contains(6));
+  book.insert(hermes::Order(6, 1006, 14, false, exchangeId));
+  auto listener = book.trade_listener();
+  auto trades = listener.trades();
+
+  bool containsMaker4 = false;
+  bool containsMaker5 = false;
+  bool containsTaker6 = false;
+
+  for (auto t : trades) {
+    if (t.makerId() == 4) {
+      EXPECT_EQ(t.price(), 1008);
+      EXPECT_EQ(t.quantity(), 10);
+      containsMaker4 = true;
+    }
+
+    if (t.makerId() == 5) {
+      EXPECT_EQ(t.price(), 1007);
+      EXPECT_EQ(t.quantity(), 2);
+      containsMaker5 = true;
+    }
+
+    if (t.takerId() == 6) {
+      containsTaker6 = true;
+    }
+  }
+
+  EXPECT_TRUE(containsMaker4);
+  EXPECT_TRUE(containsMaker5);
+  EXPECT_TRUE(containsTaker6);
+  EXPECT_TRUE(book.asks().contains(6));
   EXPECT_FALSE(book.bids().contains(4));
+
+  EXPECT_EQ(book.asks().find(6)->quantity(), 2);
 }

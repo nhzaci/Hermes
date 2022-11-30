@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Order.hxx"
+#include "Trade.hxx"
+#include "Types.hxx"
 
 #include <algorithm>
 #include <cstdint>
@@ -13,25 +15,24 @@
 
 namespace hermes {
 
-template <typename ContainerImpl, typename Order,
-          typename Compare = std::less<typename Order::price_t>>
-concept ContainerLike = OrderLike<Order> && requires(ContainerImpl impl) {
+template <typename ContainerImpl, typename Order, typename Trade,
+          typename Compare = std::less<price_t>>
+concept ContainerLike = OrderLike<Order> && TradeLike<Trade> &&
+    requires(ContainerImpl impl) {
   typename ContainerImpl::itr_t;
   typename ContainerImpl::cmp_t;
 
   { impl.size() } -> std::convertible_to<size_t>;
-  { impl.bestPrice() } -> std::convertible_to<typename Order::price_t>;
-  { impl.contains(typename Order::id_t{}) } -> std::convertible_to<bool>;
+  { impl.bestPrice() } -> std::convertible_to<price_t>;
+  { impl.contains(id_t{}) } -> std::convertible_to<bool>;
   { impl.insert(Order{}) } -> std::convertible_to<void>;
   { impl.modify(Order{}) } -> std::convertible_to<void>;
-  {
-    impl.find(typename Order::id_t{})
-    } -> std::convertible_to<typename ContainerImpl::itr_t>;
-  { impl.remove(typename Order::id_t{}) } -> std::convertible_to<void>;
+  { impl.find(id_t{}) } -> std::convertible_to<typename ContainerImpl::itr_t>;
+  { impl.remove(id_t{}) } -> std::convertible_to<void>;
   // TODO: Figure out how to pass a lvalue in a concept function
   // { impl.cross(std::declval<Order>()) } -> std::convertible_to<void>;
-} &&(std::same_as<Compare, std::less<typename Order::price_t>> ||
-     std::same_as<Compare, std::greater<typename Order::price_t>>);
+} &&(std::same_as<Compare, std::less<price_t>> ||
+     std::same_as<Compare, std::greater<price_t>>);
 
 /**
  * @brief RBTreeContainer is a data structure that contains two data structures.
@@ -43,22 +44,15 @@ concept ContainerLike = OrderLike<Order> && requires(ContainerImpl impl) {
  * @tparam Order    Order must adhere to OrderLike concept
  * @tparam Compare  Contains algorithm for sorting of orders within container
  */
-template <OrderLike Order,
-          typename Compare = std::less<typename Order::price_t>>
+template <OrderLike Order, TradeLike Trade,
+          typename Compare = std::less<price_t>>
 class RBTreeContainer {
 public:
-  using order_id_t = typename Order::id_t;
-  using order_price_t = typename Order::price_t;
-  using order_quantity_t = typename Order::quantity_t;
-  using order_exch_id_t = typename Order::exch_id_t;
-  using order_type_t = typename Order::type_t;
-
-  using price_t = order_price_t;
   using list_itr_t = typename std::list<Order>::iterator;
   using itr_t = list_itr_t;
   using cmp_t = Compare;
   using container_t = std::map<price_t, std::list<Order>, cmp_t>;
-  using id_map_t = std::unordered_map<order_id_t, list_itr_t>;
+  using id_map_t = std::unordered_map<id_t, list_itr_t>;
 
   RBTreeContainer() : priceLevels_{}, orderMap_{}, size_{}, cmp_fn_{} {}
 
@@ -70,7 +64,7 @@ public:
   /**
    * @brief Checks if id exists in hash table
    */
-  bool contains(order_id_t id) const { return orderMap_.contains(id); }
+  bool contains(id_t id) const { return orderMap_.contains(id); }
 
   /**
    * @brief Finds a node, deferencing might lead to a
@@ -79,7 +73,7 @@ public:
    *
    * @return Returns an iterator to the order within its linked list
    */
-  itr_t find(order_id_t id) const { return orderMap_.find(id)->second; }
+  itr_t find(id_t id) const { return orderMap_.find(id)->second; }
 
   /**
    * @brief Inserts an order into the tree and updates hash table
@@ -164,7 +158,7 @@ public:
   /**
    * @brief Removes order and removes price level if level is empty
    */
-  void remove(order_id_t id) {
+  void remove(id_t id) {
     auto mapItr = orderMap_.find(id);
     auto orderItr = mapItr->second;
 
@@ -187,7 +181,9 @@ public:
   // TODO: Abstract crossing out to a strategy, there are many strategies
   // for crossing an order. Currently it's FIFO, try passing a strategy
   // where I'm able to cross with multiple different possibilities
-  void cross(Order &oppSideOrder) {
+  std::vector<Trade> cross(Order &oppSideOrder) {
+    std::vector<Trade> trades;
+
     // while opp of comparator or equal, pop orders from list,
     // advancing price level itr while necessary
     auto priceLevelItr = priceLevels_.begin();
@@ -196,7 +192,7 @@ public:
             cmp_fn_(priceLevelItr->first, oppSideOrder.price())) and
            oppSideOrder.quantity() > 0) {
       // iterate through price level list
-      auto levelList = priceLevelItr->second;
+      auto [currPrice, levelList] = *priceLevelItr;
       auto levelListItr = levelList.begin();
 
       // iterate through levels until we reach 0 quantity left
@@ -206,6 +202,10 @@ public:
         // check quantity fulfilled
         auto quantityFulfilled =
             std::min(oppSideOrder.quantity(), currOrder.quantity());
+
+        // add trades
+        trades.emplace_back(oppSideOrder.id(), currOrder.id(),
+                            quantityFulfilled, currPrice);
 
         // set quantity of the order
         oppSideOrder.setQuantity(oppSideOrder.quantity() - quantityFulfilled);
@@ -224,6 +224,8 @@ public:
       // get next best price
       priceLevelItr = priceLevels_.begin();
     }
+
+    return trades;
   }
 
   /**

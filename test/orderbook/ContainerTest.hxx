@@ -5,7 +5,8 @@
 #include "../../src/orderbook/Container.hxx"
 #include "../../src/orderbook/Order.hxx"
 
-template <hermes::OrderLike Order> class TestContainer {
+template <hermes::OrderLike Order, hermes::TradeLike Trade>
+class TestContainer {
 public:
   using order_id_t = typename Order::id_t;
   using price_t = typename Order::price_t;

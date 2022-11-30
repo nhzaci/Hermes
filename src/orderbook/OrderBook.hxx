@@ -2,24 +2,31 @@
 
 #include "Container.hxx"
 #include "Order.hxx"
+#include "Trade.hxx"
+#include "TradeListener.hxx"
+#include "Types.hxx"
 
 #include <functional>
 #include <iostream>
 #include <memory>
-#include <tuple>
+#include <string>
 #include <vector>
 
 namespace hermes {
 
 template <typename OrderbookImpl, typename BidsContainer,
-          typename AsksContainer, typename Order>
+          typename AsksContainer, typename Order, typename TradeListener,
+          typename Trade>
 concept OrderbookLike = OrderLike<Order> &&
-    ContainerLike<BidsContainer, Order> &&
-    ContainerLike<AsksContainer, Order> && requires(OrderbookImpl impl) {
+    ContainerLike<BidsContainer, Order, Trade> &&
+    ContainerLike<AsksContainer, Order, Trade> && TradeLike<Trade> &&
+    TradeListenerLike<TradeListener, Trade> && requires(OrderbookImpl impl) {
   typename OrderbookImpl::bids_t;
   typename OrderbookImpl::asks_t;
 
+  { impl.symbol() } -> std::convertible_to<std::string>;
   { impl.size() } -> std::convertible_to<size_t>;
+  { impl.trade_listener() } -> std::convertible_to<TradeListener>;
   { impl.getBids() } -> std::convertible_to<typename OrderbookImpl::bids_t>;
   { impl.getAsks() } -> std::convertible_to<typename OrderbookImpl::asks_t>;
   { impl.insert(Order{}) } -> std::convertible_to<void>;
@@ -28,69 +35,69 @@ concept OrderbookLike = OrderLike<Order> &&
   { impl.trade(Order{}) } -> std::convertible_to<void>;
 };
 
-template <
-    OrderLike Order, ContainerLike<Order> AsksContainer,
-    ContainerLike<Order, std::greater<typename Order::price_t>> BidsContainer>
+template <OrderLike Order, TradeLike Trade,
+          ContainerLike<Order, Trade> AsksContainer,
+          ContainerLike<Order, Trade, std::greater<price_t>> BidsContainer,
+          TradeListenerLike<Trade> TradeListener>
 class Orderbook {
 public:
   using asks_t = AsksContainer;
   using bids_t = BidsContainer;
-  using order_id_t = typename Order::id_t;
-  using order_price_t = typename Order::price_t;
-  using order_quantity_t = typename Order::quantity_t;
-  using order_exch_id_t = typename Order::exch_id_t;
-  using order_type_t = typename Order::type_t;
+  using symbol_t = std::string;
+  using trade_listener_t = TradeListener;
 
-  Orderbook() : bids_{}, asks_{} {};
-
-  size_t size() { return bids_.size() + asks_.size(); }
+  Orderbook() : bids_{}, asks_{}, trade_listener_{}, symbol_{"Undefined"} {};
+  Orderbook(std::string symbol)
+      : bids_{}, asks_{}, trade_listener_{}, symbol_{symbol} {};
 
   /**
    * @brief Templated function for crossing buy / sell order
    */
-  template <bool isBuy> void cross(Order &);
+  template <bool isBuy> std::vector<Trade> cross(Order &);
 
-  template <> void cross<true>(Order &buyOrder) {
+  template <> std::vector<Trade> cross<true>(Order &buyOrder) {
     auto bestSellPrice = asks_.bestPrice();
     if (buyOrder.price() < bestSellPrice)
-      return;
-    asks_.cross(buyOrder);
+      return {};
+    return asks_.cross(buyOrder);
   }
 
-  template <> void cross<false>(Order &sellOrder) {
+  template <> std::vector<Trade> cross<false>(Order &sellOrder) {
     auto bestBuyPrice = bids_.bestPrice();
     if (bestBuyPrice < sellOrder.price())
-      return;
-    bids_.cross(sellOrder);
+      return {};
+    return bids_.cross(sellOrder);
   }
 
   /**
-   * @brief Insert order into bid or ask container
+   * @brief Insert order into bid or ask container, crosses order and reports
+   * trades to trade listener and inserts if available
    *  TODO: Optimize, branching before inserting doesn't look the most elegant
    */
   void insert(Order &&order) {
     if (order.isBuy()) {
-      cross<true>(order);
+      trade_listener_.onTrades(cross<true>(order));
       if (order.quantity() > 0)
         bids_.insert(std::move(order));
     } else {
-      cross<false>(order);
+      trade_listener_.onTrades(cross<false>(order));
       if (order.quantity() > 0)
         asks_.insert(std::move(order));
     }
   }
 
   /**
-   * @brief Insert order into bid or ask container
+   * @brief Insert order into bid or ask container, crosses order and reports
+   * trades to trade listener and inserts if available
    *  TODO: Optimize, branching before inserting doesn't look the most elegant
    */
   void insert(Order &order) {
     if (order.isBuy()) {
-      cross<true>(order);
+      trade_listener_.onTrades(cross<true>(order));
       if (order.quantity() > 0)
         bids_.insert(order);
     } else {
-      cross<false>(order);
+      trade_listener_.onTrades(cross<false>(order));
       if (order.quantity() > 0)
         asks_.insert(order);
     }
@@ -109,7 +116,7 @@ public:
   /**
    * @brief Remove order from bid or ask container
    */
-  void remove(order_id_t id, bool isBuyOrder) {
+  void remove(id_t id, bool isBuyOrder) {
     if (isBuyOrder)
       bids_.remove(id);
     else
@@ -119,14 +126,19 @@ public:
   /**
    * @brief Bid ask spread is the price discrepancy between bid and ask
    */
-  order_price_t bidAskSpread() { return asks_.bestPrice() - bids_.bestPrice(); }
+  price_t bidAskSpread() { return asks_.bestPrice() - bids_.bestPrice(); }
 
   const bids_t &bids() const { return bids_; }
   const asks_t &asks() const { return asks_; }
+  const std::string &symbol() const { return symbol_; }
+  const size_t size() const { return bids_.size() + asks_.size(); }
+  const trade_listener_t &trade_listener() const { return trade_listener_; }
 
 private:
   bids_t bids_;
   asks_t asks_;
+  trade_listener_t trade_listener_;
+  std::string symbol_;
 };
 
 }; // namespace hermes
