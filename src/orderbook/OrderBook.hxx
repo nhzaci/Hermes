@@ -107,7 +107,10 @@ public:
    * @brief Insert order into bid or ask container
    */
   void modify(Order &&order) {
-    getBook(order.isBuy()).modify(std::move(order));
+    if (order.isBuy())
+      bids_.modify(std::move(order));
+    else
+      asks_.modify(std::move(order));
   }
 
   /**
