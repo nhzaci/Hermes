@@ -14,7 +14,7 @@ Hermes makes use of C++20 concepts for compile-time polymorphism.
 - Clang++ 13.0
 - CMake
 
-## Debug Build
+## Building for debug
 
 ```bash
 # allow execute permissions
@@ -23,13 +23,30 @@ chmod u+x debugBuild.sh
 ./debugBuild.sh
 ```
 
-## Release Build
+## Building for release
 
 ```bash
 # allow execute permissions
 chmod u+x releaseBuild.sh
 # run build
 ./releaseBuild.sh
+```
+
+## Running binaries
+
+All the executables added will be present in `~/build/bin/`
+
+### Running all tests
+
+```bash
+# run all tests
+./build/bin/TestMain # all tests are registered inside
+```
+
+### Running benchmarks
+```bash
+# run orderbook benchmark
+./build/bin/OrderbookBenchmark
 ```
 
 # Developer Documentation
