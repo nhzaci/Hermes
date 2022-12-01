@@ -6,30 +6,32 @@ The project is named Hermes as Hermes is the fastest greek god, which is in line
 
 Hermes makes use of C++20 concepts for compile-time polymorphism.
 
-# Requirements
+# Building the project
+
+## Requirements
 
 - C++20
 - Clang++ 13.0
 - CMake
 
-# Documentation
+## Debug Build
+
+```bash
+# allow execute permissions
+chmod u+x debugBuild.sh
+# run build
+./debugBuild.sh
+```
+
+## Release Build
+
+```bash
+# allow execute permissions
+chmod u+x releaseBuild.sh
+# run build
+./releaseBuild.sh
+```
+
+# Developer Documentation
 
 - Found in the `docs/` directory, documents design decisions, requirements, design patterns etc
-
-# Components
-
-## Gateway
-
-- Communicates to external network of exchanges
-
-## Orderbook
-
-- Presents internal representation of orders from feed
-
-## Strategy
-
-- Contains signal and execution components
-
-## Order Manager
-
-- Decides if orders are sent / not sent based on risk parameters
